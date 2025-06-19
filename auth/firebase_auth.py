@@ -5,7 +5,7 @@ from fastapi import HTTPException, Depends, Header
 from typing import Optional
 
 # Initialize Firebase Admin SDK
-cred = credentials.Certificate("auth\drug-script-firebase-adminsdk-fbsvc-aa7980f96c.json")
+cred = credentials.Certificate("auth/drug-script-firebase-adminsdk-fbsvc-aa7980f96c.json")
 firebase_admin.initialize_app(cred)
 
 async def get_current_user(authorization: Optional[str] = Header(None)):
