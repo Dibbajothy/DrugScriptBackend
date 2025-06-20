@@ -14,20 +14,6 @@ async def get_todos(user_id: str = Depends(get_current_user)):
     return todos 
 
 
-
-
-
-# # Post Request Method / Create a new todo
-# @router.post("/")
-# async def create_todo(todo: Todo, user_id: str = Depends(get_current_user)):
-#     # Ensure the user_id in the todo matches the authenticated user
-#     todo_dict = dict(todo)
-#     todo_dict["user_id"] = user_id
-#     collection_name.insert_one(todo_dict)
-#     return {"message": "Todo created successfully"}
-
-
-
 # Post Request Method / Create a new todo
 @router.post("/")
 async def create_todo(todo: Todo, user_id: str = Depends(get_current_user)):
@@ -38,7 +24,6 @@ async def create_todo(todo: Todo, user_id: str = Depends(get_current_user)):
     # Insert into database
     collection_name.insert_one(todo_dict)
     return {"message": "Todo created successfully"}
-
 
 
 
@@ -57,6 +42,7 @@ async def update_todo(id: str, todo: Todo, user_id: str = Depends(get_current_us
         {"$set": todo_dict}
     )
     return {"message": "Todo updated successfully"}
+
 
 # Delete Request Method / Delete a todo
 @router.delete("/{id}")
