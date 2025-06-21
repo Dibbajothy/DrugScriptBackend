@@ -45,7 +45,7 @@ def load_medicines() -> List[Dict[str, Any]]:
             connect_to_mongodb()
         
         # Fetch medicines from MongoDB collection
-        medicines_collection = db["medicines"] # type: ignore
+        medicines_collection = db["new_medicines"] # type: ignore
         medicines = list(medicines_collection.find({}, {'_id': 0}))  # Exclude MongoDB _id from results
         
         # Clean NaN values in the data
@@ -93,7 +93,7 @@ def search_medicine(query: str) -> List[Dict[str, Any]]:
         if db is None:
             connect_to_mongodb()
         
-        medicines_collection = db["medicines"] # type: ignore
+        medicines_collection = db["new_medicines"] # type: ignore
         
         results = list(medicines_collection.aggregate([
             # Match documents containing the query
