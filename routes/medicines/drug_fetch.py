@@ -105,23 +105,11 @@ def search_medicine(query: str) -> List[Dict[str, Any]]:
                     ]
                 }
             },
-            # Add fields with calculated lengths with proper type handling
+            # Simply convert all fields to strings directly
             {
                 "$addFields": {
-                    "medicine_name_str": {
-                        "$cond": {
-                            "if": {"$isString": "$medicine_name"},
-                            "then": "$medicine_name",
-                            "else": {"$toString": {"$ifNull": ["$medicine_name", ""]}}
-                        }
-                    },
-                    "generic_name_str": {
-                        "$cond": {
-                            "if": {"$isString": "$generic_name"},
-                            "then": "$generic_name",
-                            "else": {"$toString": {"$ifNull": ["$generic_name", ""]}}
-                        }
-                    }
+                    "medicine_name_str": {"$toString": {"$ifNull": ["$medicine_name", ""]}},
+                    "generic_name_str": {"$toString": {"$ifNull": ["$generic_name", ""]}}
                 }
             },
             # Calculate lengths of the string versions
