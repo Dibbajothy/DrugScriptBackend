@@ -57,8 +57,36 @@ def load_medicines() -> List[Dict[str, Any]]:
         print(f"Error retrieving data from MongoDB: {e}")
         return []
 
+# def search_medicine(query: str) -> List[Dict[str, Any]]:
+#     """Search medicines by name, generic name using MongoDB"""
+#     global db
+    
+#     try:
+#         if db is None:
+#             connect_to_mongodb()
+        
+#         medicines_collection = db["medicines"] # type: ignore
+        
+#         # Case-insensitive search using MongoDB's regex capability
+#         results = list(medicines_collection.find({
+#             "$or": [
+#                 {"medicine_name": {"$regex": query, "$options": "i"}},
+#                 {"generic_name": {"$regex": query, "$options": "i"}}
+#             ]
+#         }, {'_id': 0}))  # Exclude MongoDB _id from results
+        
+#         # Clean NaN values in the results before returning
+#         results = clean_document(results)
+        
+#         return results # type: ignore
+#     except Exception as e:
+#         print(f"Error searching medicines in MongoDB: {e}")
+#         return []
+
+
+
 def search_medicine(query: str) -> List[Dict[str, Any]]:
-    """Search medicines by name, generic name using MongoDB"""
+    """Search medicines by name, generic name using MongoDB, sorted by shortest name length"""
     global db
     
     try:
@@ -67,13 +95,49 @@ def search_medicine(query: str) -> List[Dict[str, Any]]:
         
         medicines_collection = db["medicines"] # type: ignore
         
-        # Case-insensitive search using MongoDB's regex capability
-        results = list(medicines_collection.find({
-            "$or": [
-                {"medicine_name": {"$regex": query, "$options": "i"}},
-                {"generic_name": {"$regex": query, "$options": "i"}}
-            ]
-        }, {'_id': 0}))  # Exclude MongoDB _id from results
+        results = list(medicines_collection.aggregate([
+            # Match documents containing the query
+            {
+                "$match": {
+                    "$or": [
+                        {"medicine_name": {"$regex": query, "$options": "i"}},
+                        {"generic_name": {"$regex": query, "$options": "i"}}
+                    ]
+                }
+            },
+            # Add fields with calculated lengths for both fields
+            {
+                "$addFields": {
+                    "medicine_name_length": {"$strLenCP": "$medicine_name"},
+                    "generic_name_length": {"$strLenCP": {"$ifNull": ["$generic_name", ""]}}
+                }
+            },
+            # Add a field with the shorter of the two lengths
+            {
+                "$addFields": {
+                    "shorter_length": {
+                        "$cond": {
+                            "if": {"$lte": ["$medicine_name_length", "$generic_name_length"]},
+                            "then": "$medicine_name_length",
+                            "else": "$generic_name_length"
+                        }
+                    }
+                }
+            },
+            # Sort by the shorter length (ascending = shortest first)
+            {
+                "$sort": {"shorter_length": 1}
+            },
+            # Remove the temporary fields from results
+            {
+                "$project": {
+                    "_id": 0,
+                    "medicine_name_length": 0,
+                    "generic_name_length": 0,
+                    "shorter_length": 0
+                }
+            }
+        ]))
         
         # Clean NaN values in the results before returning
         results = clean_document(results)
