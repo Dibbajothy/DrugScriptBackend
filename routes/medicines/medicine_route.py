@@ -13,7 +13,7 @@ class SearchQuery(BaseModel):
 @router.post("/medicinesearch")
 async def search(search_query: SearchQuery):
     results = drug_fetch.search_medicine(search_query.query)
-    return {"results": results[:20]}
+    return {"results": results[:40]}
 
 
 @router.get("/medicine/{medicine_id}")
