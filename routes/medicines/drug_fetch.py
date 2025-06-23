@@ -143,7 +143,7 @@ def search_medicine(query: str) -> List[Dict[str, Any]]:
                     "medicine_name_length": 0,
                     "generic_name_length": 0,
                     "shorter_length": 0,
-                    # "_id": 0
+                    "_id": 0
                 }
             }
         ]))
