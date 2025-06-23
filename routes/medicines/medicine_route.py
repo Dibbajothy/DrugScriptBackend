@@ -23,7 +23,7 @@ async def get_medicine_details(medicine_id: str):
         drug_fetch.connect_to_mongodb()
         
     # Find medicine directly in MongoDB
-    medicine = drug_fetch.db["medicines"].find_one({"slug": medicine_id}, {'_id': 0})
+    medicine = drug_fetch.db["medicines"].find_one({"slug": medicine_id})
     
     if medicine:
         return medicine
