@@ -2,14 +2,17 @@ def profile_serializer(profile) -> dict:
     return {
         "id": str(profile["_id"]),
         "user_id": profile["user_id"],
-        "full_name": profile["full_name"],
-        "phone_number": profile.get("phone_number"),
-        "address": profile.get("address"),
-        "date_of_birth": profile.get("date_of_birth"),
-        "medical_history": profile.get("medical_history"),
+        "email": profile.get("email"),
+        "name": profile["name"],
+        "age": profile["age"],
+        "address": profile["address"],
+        "gender": profile["gender"],
+        "phone": profile["phone"],
+        "date_of_birth": profile["date_of_birth"],
+        "blood_type": profile["blood_type"],
         "allergies": profile.get("allergies"),
-        "emergency_contact": profile.get("emergency_contact"),
-        "blood_type": profile.get("blood_type")
+        "medical_conditions": profile.get("medical_conditions"),
+        "emergency_contact": profile["emergency_contact"]
     }
 
 def profile_list_serializer(profiles) -> list:

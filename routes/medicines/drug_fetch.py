@@ -3,17 +3,16 @@ from pymongo import MongoClient
 from typing import Dict, List, Any
 import math
 
-# MongoDB connection
+# MongoDB connection - Updated to use same database as profiles
 client = None
 db = None
 
 def connect_to_mongodb():
-
     global client, db
     try:
         password = quote_plus("hello@boy")
         client = MongoClient(f"mongodb+srv://dibbajothy2:{password}@tryout.fwsnut6.mongodb.net/?retryWrites=true&w=majority&appName=TryOut")
-        db = client["MedicineDB"]
+        db = client["drugscript_db"]  # Changed to match profile database
         print("Successfully connected to MongoDB")
     except Exception as e:
         print(f"Error connecting to MongoDB: {e}")
@@ -56,34 +55,6 @@ def load_medicines() -> List[Dict[str, Any]]:
     except Exception as e:
         print(f"Error retrieving data from MongoDB: {e}")
         return []
-
-# def search_medicine(query: str) -> List[Dict[str, Any]]:
-#     """Search medicines by name, generic name using MongoDB"""
-#     global db
-    
-#     try:
-#         if db is None:
-#             connect_to_mongodb()
-        
-#         medicines_collection = db["medicines"] # type: ignore
-        
-#         # Case-insensitive search using MongoDB's regex capability
-#         results = list(medicines_collection.find({
-#             "$or": [
-#                 {"medicine_name": {"$regex": query, "$options": "i"}},
-#                 {"generic_name": {"$regex": query, "$options": "i"}}
-#             ]
-#         }, {'_id': 0}))  # Exclude MongoDB _id from results
-        
-#         # Clean NaN values in the results before returning
-#         results = clean_document(results)
-        
-#         return results # type: ignore
-#     except Exception as e:
-#         print(f"Error searching medicines in MongoDB: {e}")
-#         return []
-
-
 
 def search_medicine(query: str) -> List[Dict[str, Any]]:
     """Search medicines by name, generic name using MongoDB, sorted by shortest name length"""

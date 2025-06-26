@@ -3,7 +3,8 @@ from models.profile import Profile, ProfileCreate, ProfileUpdate
 from config.database import profile_collection
 from schema.schemas import profile_serializer
 from bson import ObjectId
-from auth.firebase_auth import get_current_user
+from auth.firebase_auth import get_current_user, get_current_user_with_email
+from typing import Dict
 
 router = APIRouter(
     prefix="/profile",
@@ -12,7 +13,7 @@ router = APIRouter(
 )
 
 # Get user's profile
-@router.get("", response_model=dict)  # Changed from Profile to dict
+@router.get("", response_model=dict)
 async def get_profile(user_id: str = Depends(get_current_user)):
     profile = profile_collection.find_one({"user_id": user_id})
     if not profile:
@@ -24,7 +25,13 @@ async def get_profile(user_id: str = Depends(get_current_user)):
 
 # Create user profile
 @router.post("", status_code=status.HTTP_201_CREATED)
-async def create_profile(profile: ProfileCreate, user_id: str = Depends(get_current_user)):
+async def create_profile(
+    profile: ProfileCreate, 
+    user_data: Dict[str, str] = Depends(get_current_user_with_email)
+):
+    user_id = user_data["user_id"]
+    email = user_data["email"]
+    
     # Check if profile already exists
     existing_profile = profile_collection.find_one({"user_id": user_id})
     if existing_profile:
@@ -33,9 +40,17 @@ async def create_profile(profile: ProfileCreate, user_id: str = Depends(get_curr
             detail="Profile already exists for this user"
         )
     
-    # Create profile dictionary
-    profile_dict = profile.dict()
+    # Validate age
+    if profile.age < 0 or profile.age > 150:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid age. Age must be between 0 and 150."
+        )
+    
+    # Create profile dictionary - FIXED: using model_dump() instead of dict()
+    profile_dict = profile.model_dump()
     profile_dict["user_id"] = user_id
+    profile_dict["email"] = email
     
     # Insert into database
     result = profile_collection.insert_one(profile_dict)
@@ -45,7 +60,7 @@ async def create_profile(profile: ProfileCreate, user_id: str = Depends(get_curr
     return profile_serializer(created_profile)
 
 # Update user profile
-@router.put("", response_model=dict)  # Changed from Profile to dict
+@router.put("", response_model=dict)
 async def update_profile(profile: ProfileUpdate, user_id: str = Depends(get_current_user)):
     # Check if profile exists
     existing_profile = profile_collection.find_one({"user_id": user_id})
@@ -55,12 +70,19 @@ async def update_profile(profile: ProfileUpdate, user_id: str = Depends(get_curr
             detail="Profile not found"
         )
     
-    # Update only provided fields
-    update_dict = profile.dict(exclude_unset=True)
+    # Update only provided fields - FIXED: using model_dump() instead of dict()
+    update_dict = profile.model_dump(exclude_unset=True)
     if not update_dict:
         raise HTTPException(
             status_code=400,
             detail="No fields to update"
+        )
+    
+    # Validate age if provided
+    if "age" in update_dict and (update_dict["age"] < 0 or update_dict["age"] > 150):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid age. Age must be between 0 and 150."
         )
     
     # Update profile
@@ -87,3 +109,14 @@ async def delete_profile(user_id: str = Depends(get_current_user)):
     # Delete profile
     profile_collection.delete_one({"user_id": user_id})
     return {"message": "Profile deleted successfully"}
+
+# Get profile by email (for admin purposes)
+@router.get("/by-email/{email}")
+async def get_profile_by_email(email: str, user_id: str = Depends(get_current_user)):
+    profile = profile_collection.find_one({"email": email})
+    if not profile:
+        raise HTTPException(
+            status_code=404,
+            detail="Profile not found for this email"
+        )
+    return profile_serializer(profile)

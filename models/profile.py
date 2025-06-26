@@ -1,32 +1,53 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from typing import Optional
+from enum import Enum
+
+class Gender(str, Enum):
+    MALE = "male"
+    FEMALE = "female"
+    OTHER = "other"
+
+class BloodType(str, Enum):
+    A_POSITIVE = "A+"
+    A_NEGATIVE = "A-"
+    B_POSITIVE = "B+"
+    B_NEGATIVE = "B-"
+    AB_POSITIVE = "AB+"
+    AB_NEGATIVE = "AB-"
+    O_POSITIVE = "O+"
+    O_NEGATIVE = "O-"
 
 class ProfileBase(BaseModel):
-    full_name: str
-    phone_number: Optional[str] = None
-    address: Optional[str] = None
-    date_of_birth: Optional[str] = None
-    medical_history: Optional[str] = None
+    name: str
+    age: int
+    address: str
+    gender: Gender
+    phone: str
+    date_of_birth: str  # Format: YYYY-MM-DD
+    blood_type: BloodType
     allergies: Optional[str] = None
-    emergency_contact: Optional[str] = None
-    blood_type: Optional[str] = None
+    medical_conditions: Optional[str] = None
+    emergency_contact: str
 
 class ProfileCreate(ProfileBase):
     pass
 
 class ProfileUpdate(BaseModel):
-    full_name: Optional[str] = None
-    phone_number: Optional[str] = None
+    name: Optional[str] = None
+    age: Optional[int] = None
     address: Optional[str] = None
+    gender: Optional[Gender] = None
+    phone: Optional[str] = None
     date_of_birth: Optional[str] = None
-    medical_history: Optional[str] = None
+    blood_type: Optional[BloodType] = None
     allergies: Optional[str] = None
+    medical_conditions: Optional[str] = None
     emergency_contact: Optional[str] = None
-    blood_type: Optional[str] = None
 
 class Profile(ProfileBase):
     id: str
     user_id: str
+    email: str  # Gmail from Firebase auth
     
     class Config:
-        from_attributes = True  # Updated for Pydantic v2
+        from_attributes = True
