@@ -19,15 +19,15 @@ class BloodType(str, Enum):
 
 class ProfileBase(BaseModel):
     name: str
-    age: int
-    address: str
-    gender: Gender
-    phone: str
-    date_of_birth: str  # Format: YYYY-MM-DD
-    blood_type: BloodType
+    age: Optional[int] = None
+    address: Optional[str] = None
+    gender: Optional[str] = None
+    phone: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    blood_type: Optional[str] = None
     allergies: Optional[str] = None
     medical_conditions: Optional[str] = None
-    emergency_contact: str
+    emergency_contact: Optional[str] = None
 
 class ProfileCreate(ProfileBase):
     pass
