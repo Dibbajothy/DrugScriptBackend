@@ -34,7 +34,7 @@ connect_to_mongodb()
 class Prescription(BaseModel):
     doctor_name: str
     contact: str
-    medicines: list[dict]  # List of medicines with their details
+    medicines: list[str]  # List of medicines with their details
     image: str  # Base64 encoded image string
 
 
@@ -57,7 +57,6 @@ async def add_prescription(prescription: Prescription, user_id: str = Depends(ge
         # Return success response with the ID of the inserted document
         return {
             "message": "Prescription added successfully",
-            "image": prescription.image,  # Return the image as well
             "prescription_id": str(result.inserted_id),
             "doctor_name": prescription.doctor_name,
             "contact": prescription.contact,
