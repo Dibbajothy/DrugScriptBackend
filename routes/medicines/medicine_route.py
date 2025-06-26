@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-import routes.medicines.drug_fetch as drug_fetch  # Fixed import
+import routes.medicines.drug_fetch as drug_fetch
+
 
 router = APIRouter()
 
@@ -22,9 +23,8 @@ async def get_medicine_details(medicine_id: str):
         drug_fetch.connect_to_mongodb()
         
     # Find medicine directly in MongoDB
-    medicine = drug_fetch.db["new_medicines"].find_one({"slug": medicine_id}, {'_id': 0})
+    medicine = drug_fetch.db["medicines"].find_one({"slug": medicine_id}, {'_id': 0})
     
     if medicine:
-        # Clean the medicine data before returning
-        return drug_fetch.clean_document(medicine)
+        return medicine
     return {"error": "Medicine not found"}
