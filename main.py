@@ -1,12 +1,7 @@
 from fastapi import FastAPI
-from pymongo.mongo_client import MongoClient
-from pymongo.server_api import ServerApi
-from urllib.parse import quote_plus
 from fastapi.middleware.cors import CORSMiddleware
-import routes
-import routes.medicines
-import routes.medicines.medicine_route
-import routes.route;
+from routes import profile_route
+from routes.medicines import medicine_route
 
 app = FastAPI()
 
@@ -19,5 +14,5 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(routes.route.router)
-app.include_router(routes.medicines.medicine_route.router)
+app.include_router(profile_route.router)
+app.include_router(medicine_route.router)

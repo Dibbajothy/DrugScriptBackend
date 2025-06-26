@@ -1,11 +1,16 @@
-def individual_serializer(todo) -> dict:
+def profile_serializer(profile) -> dict:
     return {
-        "id": str(todo["_id"]),  # MongoDB uses "_id" for the document ID
-        "name": todo["name"],
-        "description": todo["description"],
-        "completed": todo["completed"],
-        "user_id": todo["user_id"]
+        "id": str(profile["_id"]),
+        "user_id": profile["user_id"],
+        "full_name": profile["full_name"],
+        "phone_number": profile.get("phone_number"),
+        "address": profile.get("address"),
+        "date_of_birth": profile.get("date_of_birth"),
+        "medical_history": profile.get("medical_history"),
+        "allergies": profile.get("allergies"),
+        "emergency_contact": profile.get("emergency_contact"),
+        "blood_type": profile.get("blood_type")
     }
 
-def list_serializer(todos) -> list:
-    return [individual_serializer(todo) for todo in todos]
+def profile_list_serializer(profiles) -> list:
+    return [profile_serializer(profile) for profile in profiles]
