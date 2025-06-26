@@ -26,3 +26,15 @@ venv.bak/
 
 # Firebase
 auth/*.json
+
+
+# Railway
+.railway/
+
+# Database
+*.db
+*.sqlite3
+
+# OS
+.DS_Store
+Thumbs.db
