@@ -1,12 +1,22 @@
+import os
 import firebase_admin
 from firebase_admin import credentials, auth
 from firebase_admin.auth import InvalidIdTokenError
 from fastapi import HTTPException, Depends, Header
 from typing import Optional, Dict
+from dotenv import load_dotenv
 
-# Initialize Firebase Admin SDK
-cred = credentials.Certificate("auth/drug-script-firebase-adminsdk-fbsvc-aa7980f96c.json")
-firebase_admin.initialize_app(cred)
+load_dotenv()
+
+FIREBASE_CREDENTIALS_PATH = os.getenv("FIREBASE_CREDENTIALS_PATH", "auth/drug-script-firebase-adminsdk-fbsvc-aa7980f96c.json")
+
+try:
+    cred = credentials.Certificate(FIREBASE_CREDENTIALS_PATH)
+    firebase_admin.initialize_app(cred)
+    print("✅ Firebase Admin SDK initialized successfully")
+except Exception as e:
+    print(f"❌ Failed to initialize Firebase: {e}")
+    raise
 
 async def get_current_user(authorization: Optional[str] = Header(None)) -> str:
     if authorization is None or not authorization.startswith("Bearer "):

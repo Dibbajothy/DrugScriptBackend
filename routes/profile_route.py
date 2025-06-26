@@ -40,14 +40,14 @@ async def create_profile(
             detail="Profile already exists for this user"
         )
     
-    # Validate age
-    if profile.age < 0 or profile.age > 150:
+    # Validate age if provided
+    if profile.age is not None and (profile.age < 0 or profile.age > 150):
         raise HTTPException(
             status_code=400,
             detail="Invalid age. Age must be between 0 and 150."
         )
     
-    # Create profile dictionary - FIXED: using model_dump() instead of dict()
+    # Create profile dictionary
     profile_dict = profile.model_dump()
     profile_dict["user_id"] = user_id
     profile_dict["email"] = email
@@ -70,7 +70,7 @@ async def update_profile(profile: ProfileUpdate, user_id: str = Depends(get_curr
             detail="Profile not found"
         )
     
-    # Update only provided fields - FIXED: using model_dump() instead of dict()
+    # Update only provided fields
     update_dict = profile.model_dump(exclude_unset=True)
     if not update_dict:
         raise HTTPException(
@@ -79,7 +79,7 @@ async def update_profile(profile: ProfileUpdate, user_id: str = Depends(get_curr
         )
     
     # Validate age if provided
-    if "age" in update_dict and (update_dict["age"] < 0 or update_dict["age"] > 150):
+    if "age" in update_dict and update_dict["age"] is not None and (update_dict["age"] < 0 or update_dict["age"] > 150):
         raise HTTPException(
             status_code=400,
             detail="Invalid age. Age must be between 0 and 150."

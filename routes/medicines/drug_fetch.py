@@ -2,22 +2,7 @@ from urllib.parse import quote_plus
 from pymongo import MongoClient
 from typing import Dict, List, Any
 import math
-
-# MongoDB connection
-client = None
-db = None
-
-def connect_to_mongodb():
-
-    global client, db
-    try:
-        password = quote_plus("hello@boy")
-        client = MongoClient(f"mongodb+srv://dibbajothy2:{password}@tryout.fwsnut6.mongodb.net/?retryWrites=true&w=majority&appName=TryOut")
-        db = client["MedicineDB"]
-        print("Successfully connected to MongoDB")
-    except Exception as e:
-        print(f"Error connecting to MongoDB: {e}")
-        raise
+from config.database import db, client  # Import from unified config
 
 def clean_document(doc):
     """Replace NaN values with None to make JSON serializable"""
@@ -38,62 +23,25 @@ def clean_document(doc):
 
 def load_medicines() -> List[Dict[str, Any]]:
     """Load medicines from MongoDB and return as a list of dictionaries"""
-    global db
-    
     try:
-        if db is None:
-            connect_to_mongodb()
-        
-        # Fetch medicines from MongoDB collection
-        medicines_collection = db["new_medicines"] # type: ignore
+        # Use unified database connection
+        medicines_collection = db["medicines"]
         medicines = list(medicines_collection.find({}, {'_id': 0}))  # Exclude MongoDB _id from results
         
         # Clean NaN values in the data
         medicines = clean_document(medicines)
         
-        print(f"Successfully loaded {len(medicines)} medicine entries from MongoDB.") # type: ignore
-        return medicines # type: ignore
+        print(f"Successfully loaded {len(medicines)} medicine entries from MedicineAppDB.")
+        return medicines
     except Exception as e:
-        print(f"Error retrieving data from MongoDB: {e}")
+        print(f"Error retrieving data from MedicineAppDB: {e}")
         return []
-
-# def search_medicine(query: str) -> List[Dict[str, Any]]:
-#     """Search medicines by name, generic name using MongoDB"""
-#     global db
-    
-#     try:
-#         if db is None:
-#             connect_to_mongodb()
-        
-#         medicines_collection = db["medicines"] # type: ignore
-        
-#         # Case-insensitive search using MongoDB's regex capability
-#         results = list(medicines_collection.find({
-#             "$or": [
-#                 {"medicine_name": {"$regex": query, "$options": "i"}},
-#                 {"generic_name": {"$regex": query, "$options": "i"}}
-#             ]
-#         }, {'_id': 0}))  # Exclude MongoDB _id from results
-        
-#         # Clean NaN values in the results before returning
-#         results = clean_document(results)
-        
-#         return results # type: ignore
-#     except Exception as e:
-#         print(f"Error searching medicines in MongoDB: {e}")
-#         return []
-
-
 
 def search_medicine(query: str) -> List[Dict[str, Any]]:
     """Search medicines by name, generic name using MongoDB, sorted by shortest name length"""
-    global db
-    
     try:
-        if db is None:
-            connect_to_mongodb()
-        
-        medicines_collection = db["new_medicines"] # type: ignore
+        # Use unified database connection
+        medicines_collection = db["medicines"]
         
         results = list(medicines_collection.aggregate([
             # Match documents containing the query
@@ -151,7 +99,7 @@ def search_medicine(query: str) -> List[Dict[str, Any]]:
         # Clean NaN values in the results before returning
         results = clean_document(results)
         
-        return results # type: ignore
+        return results
     except Exception as e:
-        print(f"Error searching medicines in MongoDB: {e}")
+        print(f"Error searching medicines in MedicineAppDB: {e}")
         return []

@@ -21,10 +21,10 @@ class ProfileBase(BaseModel):
     name: str
     age: Optional[int] = None
     address: Optional[str] = None
-    gender: Optional[str] = None
+    gender: Optional[Gender] = None
     phone: Optional[str] = None
     date_of_birth: Optional[str] = None
-    blood_type: Optional[str] = None
+    blood_type: Optional[BloodType] = None
     allergies: Optional[str] = None
     medical_conditions: Optional[str] = None
     emergency_contact: Optional[str] = None

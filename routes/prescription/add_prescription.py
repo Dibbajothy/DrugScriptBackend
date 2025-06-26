@@ -1,35 +1,11 @@
-from urllib.parse import quote_plus
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from pymongo import MongoClient
 from auth.firebase_auth import get_current_user
+from config.database import db
 from datetime import datetime
-
+from bson.objectid import ObjectId
 
 router = APIRouter()
-
-
-# MongoDB connection
-client = None
-db = None
-prescriptions_collection = None
-
-def connect_to_mongodb():
-    global client, db, prescriptions_collection
-    try:
-        password = quote_plus("hello@boy")
-        client = MongoClient(f"mongodb+srv://dibbajothy2:{password}@tryout.fwsnut6.mongodb.net/?retryWrites=true&w=majority&appName=TryOut")
-        db = client["PrescriptionDB"]
-        prescriptions_collection = db["prescriptions"]
-        print("Successfully connected to MongoDB")
-    except Exception as e:
-        print(f"Error connecting to MongoDB: {e}")
-        raise
-
-
-# Connect to MongoDB when module is imported
-connect_to_mongodb()
-
 
 class Prescription(BaseModel):
     doctor_name: str
@@ -37,10 +13,12 @@ class Prescription(BaseModel):
     medicines: list[str]  # List of medicines with their details
     image: str  # Base64 encoded image string
 
-
 @router.post("/add_prescription")
 async def add_prescription(prescription: Prescription, user_id: str = Depends(get_current_user)):
     try:
+        # Use unified database connection
+        prescriptions_collection = db["prescriptions"]
+        
         # Create a document to insert into MongoDB
         prescription_doc = {
             "user_id": user_id,
@@ -64,18 +42,18 @@ async def add_prescription(prescription: Prescription, user_id: str = Depends(ge
             "user_id": user_id
         }
     except Exception as e:
-        # Log the error
-        print(f"Error adding prescription to MongoDB: {e}")
-        # Raise an HTTP exception
+        print(f"Error adding prescription to MedicineAppDB: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to add prescription: {str(e)}"
         )
 
-
 @router.get("/prescriptions")
 async def get_prescriptions(user_id: str = Depends(get_current_user)):
     try:
+        # Use unified database connection
+        prescriptions_collection = db["prescriptions"]
+        
         # Query prescriptions for the authenticated user
         cursor = prescriptions_collection.find({"user_id": user_id})
         
@@ -88,9 +66,6 @@ async def get_prescriptions(user_id: str = Depends(get_current_user)):
             if "created_at" in doc:
                 doc["created_at"] = doc["created_at"].isoformat()
             
-            # Optionally omit the image field to reduce response size
-            # doc.pop("image", None)
-            
             prescriptions.append(doc)
         
         return {
@@ -98,17 +73,17 @@ async def get_prescriptions(user_id: str = Depends(get_current_user)):
             "count": len(prescriptions)
         }
     except Exception as e:
-        print(f"Error fetching prescriptions: {e}")
+        print(f"Error fetching prescriptions from MedicineAppDB: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch prescriptions: {str(e)}"
         )
 
-
 @router.get("/prescription/{prescription_id}")
 async def get_prescription_by_id(prescription_id: str, user_id: str = Depends(get_current_user)):
     try:
-        from bson.objectid import ObjectId
+        # Use unified database connection
+        prescriptions_collection = db["prescriptions"]
         
         # Query the specific prescription
         prescription = prescriptions_collection.find_one({
@@ -130,7 +105,7 @@ async def get_prescription_by_id(prescription_id: str, user_id: str = Depends(ge
         
         return prescription
     except Exception as e:
-        print(f"Error fetching prescription: {e}")
+        print(f"Error fetching prescription from MedicineAppDB: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch prescription: {str(e)}"
