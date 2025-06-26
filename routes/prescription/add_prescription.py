@@ -10,8 +10,11 @@ router = APIRouter()
 class Prescription(BaseModel):
     doctor_name: str
     contact: str
+    date: str  # Date in ISO format (DD-MM-YYYY)
+    diagnosis: str
     medicines: list[str]  # List of medicines with their details
     image: str  # Base64 encoded image string
+    created_by: str  # Optional field to track who created the prescription
 
 @router.post("/add_prescription")
 async def add_prescription(prescription: Prescription, user_id: str = Depends(get_current_user)):
@@ -24,8 +27,11 @@ async def add_prescription(prescription: Prescription, user_id: str = Depends(ge
             "user_id": user_id,
             "doctor_name": prescription.doctor_name,
             "contact": prescription.contact,
+            "date": prescription.date,  # Assuming date is in ISO format (DD-MM-YYYY)
+            "diagnosis": prescription.diagnosis,
             "medicines": prescription.medicines,
             "image": prescription.image,
+            "created_by": prescription.created_by,
             "created_at": datetime.utcnow()
         }
         
@@ -38,7 +44,11 @@ async def add_prescription(prescription: Prescription, user_id: str = Depends(ge
             "prescription_id": str(result.inserted_id),
             "doctor_name": prescription.doctor_name,
             "contact": prescription.contact,
+            "date": prescription.date,
+            "diagnosis": prescription.diagnosis,
             "medicines": prescription.medicines,
+            "created_by": prescription.created_by,
+            "created_at": prescription_doc["created_at"].isoformat(),
             "user_id": user_id
         }
     except Exception as e:
