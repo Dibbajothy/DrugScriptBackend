@@ -3,9 +3,9 @@ from typing import Optional
 from enum import Enum
 
 class Gender(str, Enum):
-    MALE = "male"
-    FEMALE = "female"
-    OTHER = "other"
+    MALE = "Male"
+    FEMALE = "Female"
+    OTHER = "Other"
 
 class BloodType(str, Enum):
     A_POSITIVE = "A+"
