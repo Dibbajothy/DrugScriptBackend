@@ -48,7 +48,7 @@ async def add_prescription(prescription: Prescription, user_id: str = Depends(ge
             "diagnosis": prescription.diagnosis,
             "medicines": prescription.medicines,
             "created_by": prescription.created_by,
-            "created_at": prescription_doc["created_at"].isoformat(),
+            "created_at": prescription_doc["created_at"].strftime("%H:%M:%S"),
             "user_id": user_id
         }
     except Exception as e:
