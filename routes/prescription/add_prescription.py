@@ -64,8 +64,8 @@ async def get_prescriptions(user_id: str = Depends(get_current_user)):
         # Use unified database connection
         prescriptions_collection = db["prescriptions"]
         
-        # Query prescriptions for the authenticated user
-        cursor = prescriptions_collection.find({"user_id": user_id})
+        # Query prescriptions for the authenticated user and sort by created_at in descending order
+        cursor = prescriptions_collection.find({"user_id": user_id}).sort("created_at", -1)
         
         # Convert MongoDB documents to a list of dictionaries with only the requested fields
         prescriptions = []
