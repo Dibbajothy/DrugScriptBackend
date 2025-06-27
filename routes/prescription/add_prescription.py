@@ -82,8 +82,7 @@ async def get_prescriptions(user_id: str = Depends(get_current_user)):
             prescriptions.append(prescription)
         
         return {
-            "prescriptions": prescriptions,
-            "count": len(prescriptions)
+            "prescriptions": prescriptions
         }
     except Exception as e:
         print(f"Error fetching prescriptions from MedicineAppDB: {e}")
