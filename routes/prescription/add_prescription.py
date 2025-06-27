@@ -67,16 +67,19 @@ async def get_prescriptions(user_id: str = Depends(get_current_user)):
         # Query prescriptions for the authenticated user
         cursor = prescriptions_collection.find({"user_id": user_id})
         
-        # Convert MongoDB documents to a list of dictionaries
+        # Convert MongoDB documents to a list of dictionaries with only the requested fields
         prescriptions = []
         for doc in cursor:
-            # Convert ObjectId to string for JSON serialization
-            doc["_id"] = str(doc["_id"])
-            # Convert datetime to string for JSON serialization
-            if "created_at" in doc:
-                doc["created_at"] = doc["created_at"].isoformat()
+            # Extract only the needed fields
+            prescription = {
+                "prescription_id": str(doc["_id"]),
+                "doctor_name": doc["doctor_name"],
+                "date": doc["date"],
+                "diagnosis": doc["diagnosis"],
+                "created_at": doc["created_at"].isoformat() if "created_at" in doc else None
+            }
             
-            prescriptions.append(doc)
+            prescriptions.append(prescription)
         
         return {
             "prescriptions": prescriptions,
@@ -88,6 +91,7 @@ async def get_prescriptions(user_id: str = Depends(get_current_user)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch prescriptions: {str(e)}"
         )
+
 
 @router.get("/prescription/{prescription_id}")
 async def get_prescription_by_id(prescription_id: str, user_id: str = Depends(get_current_user)):
