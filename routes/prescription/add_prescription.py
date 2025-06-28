@@ -12,7 +12,7 @@ class Prescription(BaseModel):
     contact: str
     date: str  # Date in ISO format (DD-MM-YYYY)
     diagnosis: str
-    medicines: list[str]  # List of medicines with their details
+    medicines: list[dict]  # List of medicines with their details
     image: str  # Base64 encoded image string
     created_by: str  # Optional field to track who created the prescription
 
