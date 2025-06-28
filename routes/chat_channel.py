@@ -11,11 +11,11 @@ router = APIRouter(prefix="/channels", tags=["Chat Channels"])
 
 # Ensure default general channel exists
 def ensure_general_channel():
-    general = channel_collection.find_one({"name": "general"})
+    general = channel_collection.find_one({"name": "General"})
     if not general:
         channel_collection.insert_one({
-            "name": "general",
-            "owner_id": None  # No owner for general channel
+            "name": "General",
+            "owner_id": None
         })
 
 ensure_general_channel()
