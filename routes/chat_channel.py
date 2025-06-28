@@ -1,38 +1,35 @@
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel, Field
 from typing import List
 from config.database import db, messages_collection
 from bson import ObjectId
 from datetime import datetime
+from models.chat import ChannelCreate, ChannelOut, MessageCreate, MessageOut
 
 channel_collection = db["channels"]
 
-class ChannelCreate(BaseModel):
-    name: str
-
-class ChannelOut(BaseModel):
-    id: str
-    name: str
-
-class MessageCreate(BaseModel):
-    sender_id: str
-    content: str
-
-class MessageOut(BaseModel):
-    id: str
-    channel_id: str
-    sender_id: str
-    content: str
-    timestamp: datetime
-
 router = APIRouter(prefix="/channels", tags=["Chat Channels"])
+
+# Ensure default general channel exists
+def ensure_general_channel():
+    general = channel_collection.find_one({"name": "general"})
+    if not general:
+        channel_collection.insert_one({
+            "name": "general",
+            "owner_id": None  # No owner for general channel
+        })
+
+ensure_general_channel()
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_channel(channel: ChannelCreate):
-    if channel_collection.find_one({"name": channel.name}):
-        raise HTTPException(status_code=400, detail="Channel already exists")
-    result = channel_collection.insert_one(channel.dict())
-    return {"id": str(result.inserted_id), "name": channel.name}
+    # ChannelCreate should have: name: str, owner_id: str
+    if channel_collection.find_one({"name": channel.name, "owner_id": channel.owner_id}):
+        raise HTTPException(status_code=400, detail="Channel already exists for this user")
+    result = channel_collection.insert_one({
+        "name": channel.name,
+        "owner_id": channel.owner_id
+    })
+    return {"id": str(result.inserted_id), "name": channel.name, "owner_id": channel.owner_id}
 
 @router.get("/", response_model=List[ChannelOut])
 async def list_channels():
@@ -40,16 +37,17 @@ async def list_channels():
     return [
         {
             "id": str(channel["_id"]),
-            "name": channel["name"]
+            "name": channel["name"],
+            "owner_id": channel.get("owner_id")
         }
         for channel in channels
     ]
 
-@router.delete("/{channel_name}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_channel(channel_name: str):
-    result = channel_collection.delete_one({"name": channel_name})
+@router.delete("/{channel_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_channel(channel_id: str, owner_id: str):
+    result = channel_collection.delete_one({"_id": ObjectId(channel_id), "owner_id": owner_id})
     if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Channel not found")
+        raise HTTPException(status_code=404, detail="Channel not found or not owned by user")
     return
 
 @router.post("/{channel_id}/messages", response_model=MessageOut, status_code=status.HTTP_201_CREATED)
@@ -65,7 +63,6 @@ async def send_message(channel_id: str, message: MessageCreate):
     }
     result = messages_collection.insert_one(msg_doc)
     msg_doc["id"] = str(result.inserted_id)
-    msg_doc["timestamp"] = msg_doc["timestamp"]
     return {
         "id": msg_doc["id"],
         "channel_id": msg_doc["channel_id"],
