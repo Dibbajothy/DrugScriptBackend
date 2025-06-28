@@ -5,17 +5,20 @@ from firebase_admin.auth import InvalidIdTokenError
 from fastapi import HTTPException, Depends, Header
 from typing import Optional, Dict
 from dotenv import load_dotenv
+from datetime import datetime
 
 # Load environment variables
 load_dotenv()
 
 # Initialize Firebase Admin SDK
+
+
 def initialize_firebase():
     try:
         # Check if running on Railway (production)
         if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_PROJECT_ID"):
             print("🚂 Running on Railway - using environment variables")
-            
+
             # Get Firebase config from environment variables
             firebase_config = {
                 "type": "service_account",
@@ -30,36 +33,85 @@ def initialize_firebase():
                 "client_x509_cert_url": os.getenv("FIREBASE_CLIENT_X509_CERT_URL"),
                 "universe_domain": "googleapis.com"
             }
-            
+
             # Validate required fields
             required_fields = ["project_id", "private_key", "client_email"]
-            missing_fields = [field for field in required_fields if not firebase_config.get(field)]
-            
+            missing_fields = [
+                field for field in required_fields if not firebase_config.get(field)]
+
             if missing_fields:
-                raise ValueError(f"Missing Firebase environment variables: {missing_fields}")
-            
+                raise ValueError(
+                    f"Missing Firebase environment variables: {missing_fields}")
+
             cred = credentials.Certificate(firebase_config)
             firebase_admin.initialize_app(cred)
             print("✅ Firebase Admin SDK initialized from Railway environment variables")
-            
+
         else:
             # Local development - use JSON file
             print("💻 Running locally - using Firebase JSON file")
-            firebase_credentials_path = os.getenv("FIREBASE_CREDENTIALS_PATH", "auth/drug-script-firebase-adminsdk-fbsvc-aa7980f96c.json")
-            
+            firebase_credentials_path = os.getenv(
+                "FIREBASE_CREDENTIALS_PATH", "auth/drug-script-firebase-adminsdk-fbsvc-aa7980f96c.json")
+
             if os.path.exists(firebase_credentials_path):
                 cred = credentials.Certificate(firebase_credentials_path)
                 firebase_admin.initialize_app(cred)
                 print("✅ Firebase Admin SDK initialized from local JSON file")
             else:
-                raise FileNotFoundError(f"Firebase credentials file not found at {firebase_credentials_path}")
-                
+                raise FileNotFoundError(
+                    f"Firebase credentials file not found at {firebase_credentials_path}")
+
     except Exception as e:
         print(f"❌ Failed to initialize Firebase: {e}")
         raise
 
+
 # Initialize Firebase when module is imported
 initialize_firebase()
+
+# Add this new function for auto-creating user profiles
+
+
+async def ensure_user_profile_exists(user_id: str, email: str):
+    """Auto-create a basic profile for new users if it doesn't exist"""
+    try:
+        from config.database import profile_collection
+
+        # Check if profile already exists
+        existing_profile = profile_collection.find_one({"user_id": user_id})
+
+        if not existing_profile:
+            # Create basic profile with minimal required fields
+            basic_profile = {
+                "user_id": user_id,
+                "email": email,
+                # Use email prefix as default name
+                "name": email.split('@')[0],
+                "age": None,
+                "address": None,
+                "gender": None,
+                "phone": None,
+                "date_of_birth": None,
+                "blood_type": None,
+                "allergies": None,
+                "medical_conditions": None,
+                "emergency_contact": None,
+                "created_at": datetime.utcnow()
+            }
+
+            result = profile_collection.insert_one(basic_profile)
+            print(
+                f"✅ Auto-created MongoDB profile for new user: {email} (ID: {result.inserted_id})")
+            return True
+        else:
+            print(f"📝 Profile already exists for user: {email}")
+            return False
+
+    except Exception as e:
+        print(f"❌ Error auto-creating profile for {email}: {e}")
+        # Don't raise the exception to avoid blocking authentication
+        return False
+
 
 async def get_current_user(authorization: Optional[str] = Header(None)) -> str:
     if authorization is None or not authorization.startswith("Bearer "):
@@ -67,9 +119,9 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> str:
             status_code=401,
             detail="Invalid authentication credentials",
         )
-    
+
     token = authorization.replace("Bearer ", "")
-    
+
     try:
         # Verify Firebase ID token
         decoded_token = auth.verify_id_token(token)
@@ -81,20 +133,25 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> str:
             detail="Invalid authentication token",
         )
 
+
 async def get_current_user_with_email(authorization: Optional[str] = Header(None)) -> Dict[str, str]:
     if authorization is None or not authorization.startswith("Bearer "):
         raise HTTPException(
             status_code=401,
             detail="Invalid authentication credentials",
         )
-    
+
     token = authorization.replace("Bearer ", "")
-    
+
     try:
         # Verify Firebase ID token
         decoded_token = auth.verify_id_token(token)
         user_id = decoded_token['uid']
         email = decoded_token.get('email', '')
+
+        # Auto-create profile if it doesn't exist (NEW CODE)
+        await ensure_user_profile_exists(user_id, email)
+
         return {"user_id": user_id, "email": email}
     except InvalidIdTokenError:
         raise HTTPException(
