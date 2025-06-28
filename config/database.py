@@ -27,3 +27,4 @@ db = client[MONGODB_DATABASE]
 profile_collection = db["profiles"]
 medicine_collection = db["medicines"]
 prescription_collection = db["prescriptions"]
+messages_collection = db["messages"]  # Add this line
