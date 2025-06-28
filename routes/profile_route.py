@@ -120,3 +120,10 @@ async def get_profile_by_email(email: str, user_id: str = Depends(get_current_us
             detail="Profile not found for this email"
         )
     return profile_serializer(profile)
+
+@router.get("/public/{user_id}", response_model=dict)
+async def get_public_profile(user_id: str):
+    profile = profile_collection.find_one({"user_id": user_id})
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    return profile_serializer(profile)
