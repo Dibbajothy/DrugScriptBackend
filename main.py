@@ -42,7 +42,8 @@ async def root():
     return {
         "message": "DrugScript API is running",
         "database": os.getenv("MONGODB_DATABASE"),
-        "status": "healthy"
+        "status": "healthy",
+        "auto_registration": "enabled"
     }
 
 # @app.get("/health")

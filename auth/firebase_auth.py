@@ -5,7 +5,7 @@ from firebase_admin.auth import InvalidIdTokenError
 from fastapi import HTTPException, Depends, Header
 from typing import Optional, Dict
 from dotenv import load_dotenv
-from datetime import datetime
+import requests
 
 # Load environment variables
 load_dotenv()
@@ -69,49 +69,6 @@ def initialize_firebase():
 # Initialize Firebase when module is imported
 initialize_firebase()
 
-# Add this new function for auto-creating user profiles
-
-
-async def ensure_user_profile_exists(user_id: str, email: str):
-    """Auto-create a basic profile for new users if it doesn't exist"""
-    try:
-        from config.database import profile_collection
-
-        # Check if profile already exists
-        existing_profile = profile_collection.find_one({"user_id": user_id})
-
-        if not existing_profile:
-            # Create basic profile with minimal required fields
-            basic_profile = {
-                "user_id": user_id,
-                "email": email,
-                # Use email prefix as default name
-                "name": email.split('@')[0],
-                "age": None,
-                "address": None,
-                "gender": None,
-                "phone": None,
-                "date_of_birth": None,
-                "blood_type": None,
-                "allergies": None,
-                "medical_conditions": None,
-                "emergency_contact": None,
-                "created_at": datetime.utcnow()
-            }
-
-            result = profile_collection.insert_one(basic_profile)
-            print(
-                f"✅ Auto-created MongoDB profile for new user: {email} (ID: {result.inserted_id})")
-            return True
-        else:
-            print(f"📝 Profile already exists for user: {email}")
-            return False
-
-    except Exception as e:
-        print(f"❌ Error auto-creating profile for {email}: {e}")
-        # Don't raise the exception to avoid blocking authentication
-        return False
-
 
 async def get_current_user(authorization: Optional[str] = Header(None)) -> str:
     if authorization is None or not authorization.startswith("Bearer "):
@@ -148,11 +105,75 @@ async def get_current_user_with_email(authorization: Optional[str] = Header(None
         decoded_token = auth.verify_id_token(token)
         user_id = decoded_token['uid']
         email = decoded_token.get('email', '')
-
-        # Auto-create profile if it doesn't exist (NEW CODE)
-        await ensure_user_profile_exists(user_id, email)
-
         return {"user_id": user_id, "email": email}
+    except InvalidIdTokenError:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid authentication token",
+        )
+
+
+async def get_google_user_info(access_token: str) -> Dict[str, str]:
+    """Fetch user information from Google API"""
+    try:
+        response = requests.get(
+            f"https://www.googleapis.com/oauth2/v2/userinfo?access_token={access_token}"
+        )
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return {}
+    except Exception as e:
+        print(f"Error fetching Google user info: {e}")
+        return {}
+
+
+async def get_current_user_auto_register(authorization: Optional[str] = Header(None)) -> Dict[str, str]:
+    """Get current user and auto-register if new user"""
+    if authorization is None or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid authentication credentials",
+        )
+
+    token = authorization.replace("Bearer ", "")
+
+    try:
+        # Verify Firebase ID token
+        decoded_token = auth.verify_id_token(token)
+        user_id = decoded_token['uid']
+        email = decoded_token.get('email', '')
+        name = decoded_token.get('name', '')
+        
+        # Import here to avoid circular imports
+        from config.database import profile_collection
+        
+        # Check if user profile exists
+        existing_profile = profile_collection.find_one({"user_id": user_id})
+        
+        if not existing_profile:
+            # Auto-create profile for new user
+            profile_dict = {
+                "user_id": user_id,
+                "email": email,
+                "name": name or email.split('@')[0],  # Use email prefix if no name
+                "age": None,
+                "address": None,
+                "gender": None,
+                "phone": None,
+                "date_of_birth": None,
+                "blood_type": None,
+                "allergies": None,
+                "medical_conditions": None,
+                "emergency_contact": None
+            }
+            
+            # Insert new profile
+            profile_collection.insert_one(profile_dict)
+            print(f"✅ Auto-created profile for new user: {email}")
+        
+        return {"user_id": user_id, "email": email, "name": name}
+        
     except InvalidIdTokenError:
         raise HTTPException(
             status_code=401,

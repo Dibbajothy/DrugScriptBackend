@@ -3,7 +3,7 @@ from models.profile import Profile, ProfileCreate, ProfileUpdate
 from config.database import profile_collection
 from schema.schemas import profile_serializer
 from bson import ObjectId
-from auth.firebase_auth import get_current_user, get_current_user_with_email
+from auth.firebase_auth import get_current_user, get_current_user_with_email, get_current_user_auto_register
 from typing import Dict
 
 router = APIRouter(
@@ -11,6 +11,26 @@ router = APIRouter(
     tags=["profile"],
     responses={404: {"description": "Not found"}},
 )
+
+# Auto-register and get user profile (main endpoint for login)
+@router.post("/auth-login", response_model=dict)
+async def auth_login(user_data: Dict[str, str] = Depends(get_current_user_auto_register)):
+    """Auto-register user if new, then return profile"""
+    user_id = user_data["user_id"]
+    
+    # Get the profile (should exist now due to auto-registration)
+    profile = profile_collection.find_one({"user_id": user_id})
+    if not profile:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to create or retrieve user profile"
+        )
+    
+    return {
+        "message": "Login successful",
+        "profile": profile_serializer(profile),
+        "is_new_user": True if not profile.get("phone") else False  # Basic check for completed profile
+    }
 
 # Get user's profile
 @router.get("", response_model=dict)
