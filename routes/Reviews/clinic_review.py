@@ -116,8 +116,9 @@ async def create_review(
         doc["id"] = str(res.inserted_id)
 
         db.average_ratings.update_one(
-            {"subject_id": payload.subject_id},
+            {"subject_id": payload.subject_id, "is_doctor": payload.is_doctor},
             {"$set": {"average_rating": payload.average_rating}},
+
             upsert=True
         )
 
