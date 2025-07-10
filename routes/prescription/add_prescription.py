@@ -123,3 +123,31 @@ async def get_prescription_by_id(prescription_id: str, user_id: str = Depends(ge
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch prescription: {str(e)}"
         )
+    
+@router.delete("/prescription/{prescription_id}")
+async def delete_prescription(prescription_id: str, user_id: str = Depends(get_current_user)):
+    try:
+        # Use unified database connection
+        prescriptions_collection = db["prescriptions"]
+        
+        # Delete the specific prescription
+        result = prescriptions_collection.delete_one({
+            "_id": ObjectId(prescription_id),
+            "user_id": user_id  # Security check to ensure user only deletes their own prescriptions
+        })
+        
+        if result.deleted_count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Prescription not found or you do not have permission to delete it"
+            )
+        
+        return {
+            "message": "Prescription deleted successfully"
+        }
+    except Exception as e:
+        print(f"Error deleting prescription from MedicineAppDB: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete prescription: {str(e)}"
+        )
