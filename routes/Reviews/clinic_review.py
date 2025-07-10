@@ -26,7 +26,7 @@ async def get_all_clinics(current_user: dict = Depends(get_current_user)):
             clinics.append({
                 "id": str(doc.get("Id")),
                 "name": doc.get("Name"),
-                "code": doc.get("Code"),
+                "code": str(doc.get("Code")),
                 "district": doc.get("District")
             })
         return clinics
@@ -41,7 +41,7 @@ async def get_clinic_by_id(clinic_id: str, current_user: dict = Depends(get_curr
             return {
                 "id": str(clinic.get("Id")),
                 "name": clinic.get("Name"),
-                "code": clinic.get("Code"),
+                "code": str(clinic.get("Code")),
                 "district": clinic.get("District")
             }
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Clinic not found")
