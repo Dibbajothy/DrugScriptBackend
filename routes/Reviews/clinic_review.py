@@ -85,6 +85,7 @@ async def search_clinics(
             })
         return results
     except Exception as e:
+        print("🔴 /clinics/search failed:", repr(e))
         raise HTTPException(
             status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         )
