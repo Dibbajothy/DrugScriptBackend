@@ -43,6 +43,12 @@ class TopDoctorModel(BaseModel):
     average_rating: float = Field(..., ge=0.0)
 
 
+class TopClinicModel(BaseModel):
+    subject_id: str
+    displayName: str
+    average_rating: float = Field(..., ge=0.0)
+
+
 
 @router.get("/clinics", response_model=List[ClinicModel])
 async def get_all_clinics(current_user: dict = Depends(get_current_user)):
@@ -86,23 +92,6 @@ async def search_clinics(
             status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         )
     
-
-@router.get("/clinics/{clinic_id}", response_model=ClinicModel)
-async def get_clinic_by_id(clinic_id: str, current_user: dict = Depends(get_current_user)):
-    try:
-        clinic = db.clinics.find_one({"Id": int(clinic_id)})
-        if clinic:
-            return {
-                "id": str(clinic.get("Id")),
-                "name": clinic.get("Name"),
-                "code": str(clinic.get("Code")),
-                "district": clinic.get("District")
-            }
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Clinic not found")
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-    
-
 
 
 # ——— Post a review ———
@@ -198,3 +187,37 @@ async def get_top_doctors(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Unable to fetch top doctors: {e}"
         )
+    
+
+
+@router.get("/clinics/top", response_model=List[TopClinicModel], summary="Get top N clinic by average rating")
+async def get_top_doctors(
+    limit: int = Query(5, ge=1, le=50, description="How many top clinic to return"),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Returns the top `limit` clinics sorted descending by their
+    stored `average_rating` in the average_ratings collection.
+    """
+    try:
+        # filter for doctors only, sort by average_rating desc, limit to `limit`
+        cursor = (
+            db.average_ratings
+            .find({"is_doctor": False})
+            .sort("average_rating", -1)
+            .limit(limit)
+        )
+        results = [
+            {
+                "subject_id": doc["subject_id"],
+                "displayName": doc["displayName"],
+                "average_rating": doc["average_rating"],
+            }
+            for doc in cursor
+        ]
+        return results
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unable to fetch top doctors: {e}"
+        )   
