@@ -5,6 +5,7 @@ from routes import profile_route
 from routes.medicines import medicine_route
 from routes.prescription import add_prescription
 from routes.chat_channel import router as chat_channel
+from routes.Reviews import clinic_review
 # from config.database import test_database_connection
 from dotenv import load_dotenv
 
@@ -38,6 +39,7 @@ app.include_router(profile_route.router)
 app.include_router(medicine_route.router)
 app.include_router(add_prescription.router)
 app.include_router(chat_channel)
+app.include_router(clinic_review.router)
 
 @app.get("/")
 async def root():
