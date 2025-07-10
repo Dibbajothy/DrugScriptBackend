@@ -17,21 +17,44 @@ class ClinicModel(BaseModel):
     class Config:
         orm_mode = True
 
+# class ReviewCreate(BaseModel):
+#     subject_id: str                     # clinicId or doctorId
+#     is_doctor: bool
+#     rating: int = Field(..., ge=1, le=5)
+#     review: str
+#     average_rating: float
+
+# class ReviewModel(ReviewCreate):
+#     id: str
+#     user_id: str
+#     user_name: str
+#     created_at: datetime
+
+#     class Config:
+#         orm_mode = True
+        
+
+
 class ReviewCreate(BaseModel):
     subject_id: str                     # clinicId or doctorId
-    is_doctor: bool
-    rating: int = Field(..., ge=1, le=5)
-    review: str
-    average_rating: float
+    is_doctor:   bool
+    rating:      int    = Field(..., ge=1, le=5)
+    review:      str
+    average_rating: float               # still here if your Flutter client sends it
 
-class ReviewModel(ReviewCreate):
-    id: str
-    user_id: str
-    user_name: str
-    created_at: datetime
+class ReviewModel(BaseModel):
+    id:           str
+    subject_id:   str
+    is_doctor:    bool
+    rating:       int
+    review:       str
+    user_id:      str
+    user_name:    str
+    created_at:   datetime
 
     class Config:
         orm_mode = True
+
         
 
 @router.get("/clinics", response_model=List[ClinicModel])
