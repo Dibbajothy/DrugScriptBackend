@@ -49,24 +49,9 @@ async def get_all_clinics(current_user: dict = Depends(get_current_user)):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-@router.get("/clinics/{clinic_id}", response_model=ClinicModel)
-async def get_clinic_by_id(clinic_id: str, current_user: dict = Depends(get_current_user)):
-    try:
-        clinic = db.clinics.find_one({"Id": int(clinic_id)})
-        if clinic:
-            return {
-                "id": str(clinic.get("Id")),
-                "name": clinic.get("Name"),
-                "code": str(clinic.get("Code")),
-                "district": clinic.get("District")
-            }
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Clinic not found")
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-
-@router.get("/clinics/search", response_model=List[ClinicModel])
+@router.get("/clinics/_search", response_model=List[ClinicModel])
 async def search_clinics(
     q: str = Query(..., min_length=1),
     limit: int = Query(20, ge=1, le=50),
@@ -89,6 +74,24 @@ async def search_clinics(
         raise HTTPException(
             status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         )
+    
+
+@router.get("/clinics/{clinic_id}", response_model=ClinicModel)
+async def get_clinic_by_id(clinic_id: str, current_user: dict = Depends(get_current_user)):
+    try:
+        clinic = db.clinics.find_one({"Id": int(clinic_id)})
+        if clinic:
+            return {
+                "id": str(clinic.get("Id")),
+                "name": clinic.get("Name"),
+                "code": str(clinic.get("Code")),
+                "district": clinic.get("District")
+            }
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Clinic not found")
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    
+
 
 
 # ——— Post a review ———
