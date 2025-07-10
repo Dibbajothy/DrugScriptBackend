@@ -22,6 +22,7 @@ class ReviewCreate(BaseModel):
     is_doctor: bool
     rating: int = Field(..., ge=1, le=5)
     review: str
+    average_rating: float
 
 class ReviewModel(ReviewCreate):
     id: str
@@ -110,8 +111,16 @@ async def create_review(
             "user_name": current_user.get("name", "Anonymous"),
             "created_at": datetime.utcnow()
         }
+
         res = db.reviews.insert_one(doc)
         doc["id"] = str(res.inserted_id)
+
+        db.average_ratings.update_one(
+            {"subject_id": payload.subject_id},
+            {"$set": {"average_rating": payload.average_rating}},
+            upsert=True
+        )
+
         return doc
     except Exception as e:
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
