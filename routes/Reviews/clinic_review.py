@@ -19,6 +19,7 @@ class ClinicModel(BaseModel):
 
 class ReviewCreate(BaseModel):
     subject_id: str                     # clinicId or doctorId
+    displayName: str
     is_doctor:   bool
     rating:      int    = Field(..., ge=1, le=5)
     review:      str
@@ -125,7 +126,7 @@ async def create_review(
         doc["id"] = str(res.inserted_id)
 
         db.average_ratings.update_one(
-            {"subject_id": payload.subject_id, "is_doctor": payload.is_doctor},
+            {"subject_id": payload.subject_id, "is_doctor": payload.is_doctor, "displayName" : payload.displayName},
             {"$set": {"average_rating": payload.average_rating}},
 
             upsert=True
