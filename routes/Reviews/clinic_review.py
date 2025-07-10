@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
-from auth.firebase_auth import get_current_user
+from auth.firebase_auth import get_current_user, get_current_user_with_username
 from config.database import db
 from datetime import datetime
 from bson.objectid import ObjectId
@@ -98,7 +98,7 @@ async def get_clinic_by_id(clinic_id: str, current_user: dict = Depends(get_curr
 @router.post("/reviews", response_model=ReviewModel, status_code=status.HTTP_201_CREATED)
 async def create_review(
     payload: ReviewCreate,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user_with_username),
 ):
     try:
         doc = {
@@ -115,6 +115,8 @@ async def create_review(
         return doc
     except Exception as e:
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    
+
 
 # ——— Get reviews for a clinic or doctor ———
 @router.get("/reviews", response_model=List[ReviewModel])

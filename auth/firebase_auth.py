@@ -89,6 +89,28 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> str:
             status_code=401,
             detail="Invalid authentication token",
         )
+    
+
+async def get_current_user_with_username(authorization: Optional[str] = Header(None)) -> Dict[str, str]:
+    if authorization is None or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid authentication credentials",
+        )
+
+    token = authorization.replace("Bearer ", "")
+
+    try:
+        # Verify Firebase ID token
+        decoded_token = auth.verify_id_token(token)
+        user_id = decoded_token['uid']
+        email = decoded_token.get('name', '')
+        return {"uid": user_id, "name": email}
+    except InvalidIdTokenError:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid authentication token",
+        )
 
 
 async def get_current_user_with_email(authorization: Optional[str] = Header(None)) -> Dict[str, str]:
