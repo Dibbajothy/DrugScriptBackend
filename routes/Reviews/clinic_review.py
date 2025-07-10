@@ -73,19 +73,22 @@ async def search_clinics(
     current_user: dict = Depends(get_current_user),
 ):
     try:
-        regex = {"$regex": q, "$options": "i"}
-        cursor = db.clinics.find({"Name": regex}).limit(limit)
+        regex   = {"$regex": q, "$options": "i"}
+        cursor  = db.clinics.find({"Name": regex}).limit(limit)
         results = []
         for doc in cursor:
             results.append({
-                "id": str(doc["Id"]),
-                "name": doc["Name"],
-                "code": str(doc["Code"]),
+                "id":       str(doc.get("Id", "")),          # safe
+                "name":     doc.get("Name", ""),
+                "code":     str(doc.get("Code", "")),        # safe
                 "district": doc.get("District", "")
             })
         return results
     except Exception as e:
-        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(
+            status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
 
 # ——— Post a review ———
 @router.post("/reviews", response_model=ReviewModel, status_code=status.HTTP_201_CREATED)
