@@ -17,24 +17,6 @@ class ClinicModel(BaseModel):
     class Config:
         orm_mode = True
 
-# class ReviewCreate(BaseModel):
-#     subject_id: str                     # clinicId or doctorId
-#     is_doctor: bool
-#     rating: int = Field(..., ge=1, le=5)
-#     review: str
-#     average_rating: float
-
-# class ReviewModel(ReviewCreate):
-#     id: str
-#     user_id: str
-#     user_name: str
-#     created_at: datetime
-
-#     class Config:
-#         orm_mode = True
-        
-
-
 class ReviewCreate(BaseModel):
     subject_id: str                     # clinicId or doctorId
     is_doctor:   bool
@@ -55,7 +37,11 @@ class ReviewModel(BaseModel):
     class Config:
         orm_mode = True
 
-        
+class TopDoctorModel(BaseModel):
+    subject_id: str
+    average_rating: float = Field(..., ge=0.0)
+
+
 
 @router.get("/clinics", response_model=List[ClinicModel])
 async def get_all_clinics(current_user: dict = Depends(get_current_user)):
@@ -178,3 +164,36 @@ async def get_reviews(
         return out
     except Exception as e:
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    
+
+
+@router.get("/doctors/top", response_model=List[TopDoctorModel], summary="Get top N doctors by average rating")
+async def get_top_doctors(
+    limit: int = Query(5, ge=1, le=50, description="How many top doctors to return"),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Returns the top `limit` doctors sorted descending by their
+    stored `average_rating` in the average_ratings collection.
+    """
+    try:
+        # filter for doctors only, sort by average_rating desc, limit to `limit`
+        cursor = (
+            db.average_ratings
+            .find({"is_doctor": True})
+            .sort("average_rating", -1)
+            .limit(limit)
+        )
+        results = [
+            {
+                "subject_id": doc["subject_id"],
+                "average_rating": doc["average_rating"],
+            }
+            for doc in cursor
+        ]
+        return results
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unable to fetch top doctors: {e}"
+        )
