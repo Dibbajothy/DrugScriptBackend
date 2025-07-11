@@ -8,7 +8,7 @@ from bson.objectid import ObjectId
 router = APIRouter()
 
 class PrescriptionIn(BaseModel):
-    prescription_code: str
+    prescription_id: str
 
 @router.post(
     "/recievedPrescription",
@@ -31,7 +31,7 @@ async def receive_prescription(
             update_result = coll.update_one(
                 {"user_id": user_id},
                 {
-                    "$push": {"codes": data.prescription_code},
+                    "$push": {"prescription_id": data.prescription_id},
                     "$set": {"updated_at": datetime.utcnow()},
                 }
             )
@@ -43,7 +43,7 @@ async def receive_prescription(
             # No document yet for this user: create one
             doc = {
                 "user_id": user_id,
-                "codes": [data.prescription_code],
+                "prescription_id": [data.prescription_id],
                 "created_at": datetime.utcnow(),
                 "updated_at": datetime.utcnow(),
             }
