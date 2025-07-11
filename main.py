@@ -7,6 +7,7 @@ from routes.prescription import add_prescription
 from routes.chat_channel import router as chat_channel
 from routes.qrCodes import scanqr
 from routes.sharing import recieved
+from routes.sharing import sent
 from routes.Reviews import clinic_review
 # from config.database import test_database_connection
 from dotenv import load_dotenv
@@ -44,6 +45,7 @@ app.include_router(chat_channel)
 app.include_router(clinic_review.router)
 app.include_router(scanqr.router)
 app.include_router(recieved.router)
+app.include_router(sent.router)
 
 @app.get("/")
 async def root():
