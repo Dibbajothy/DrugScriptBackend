@@ -101,7 +101,10 @@ async def get_prescription_by_id(prescription_id: str, user_id: str = Depends(ge
         # Query the specific prescription
         prescription = prescriptions_collection.find_one({
             "_id": ObjectId(prescription_id),
-            "user_id": user_id  # Security check to ensure user only accesses their own prescriptions
+            "$or": [
+                {"user_id": user_id},          # owner
+                {"shared_with": user_id}       # has been shared with me
+            ]  # Security check to ensure user only accesses their own prescriptions
         })
         
         if not prescription:
@@ -123,6 +126,8 @@ async def get_prescription_by_id(prescription_id: str, user_id: str = Depends(ge
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch prescription: {str(e)}"
         )
+    
+
     
 @router.delete("/prescription/{prescription_id}")
 async def delete_prescription(prescription_id: str, user_id: str = Depends(get_current_user)):

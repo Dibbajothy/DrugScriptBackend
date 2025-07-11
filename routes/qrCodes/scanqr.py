@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from auth.firebase_auth import get_current_user
 from config.database import db
 from datetime import datetime
+from bson import ObjectId
 
 router = APIRouter()
 
@@ -15,11 +16,13 @@ async def receive_prescription(
     data: PrescriptionIn,
     user_id: str = Depends(get_current_user),
 ):
-    coll = db["recieved_prescription"]
-    now = datetime.utcnow()
+    rec_coll  = db["recieved_prescription"]
+    pres_coll = db["prescriptions"]
+    now       = datetime.utcnow()
 
     try:
-        result = coll.update_one(
+        # 1) Upsert into recieved_prescription
+        result = rec_coll.update_one(
             {"user_id": user_id},
             {
                 "$setOnInsert": {
@@ -32,7 +35,14 @@ async def receive_prescription(
             upsert=True,
         )
 
-        # 1) New document created
+        # 2) Also tag the original prescription itself
+        #    by adding this user to its `shared_with` array
+        pres_coll.update_one(
+            {"_id": ObjectId(data.prescription_id)},
+            {"$addToSet": {"shared_with": user_id}}
+        )
+
+        # 3) Return the usual response
         if result.upserted_id:
             return JSONResponse(
                 status_code=status.HTTP_201_CREATED,
@@ -41,15 +51,11 @@ async def receive_prescription(
                     "id": str(result.upserted_id),
                 },
             )
-
-        # 2) Array was modified (code added)
         if result.modified_count > 0:
             return JSONResponse(
                 status_code=status.HTTP_200_OK,
                 content={"message": "Prescription code added"},
             )
-
-        # 3) No modification => duplicate code
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content={"message": "Prescription code already exists"},
