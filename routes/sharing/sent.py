@@ -31,21 +31,21 @@ async def list_sent_prescriptions(
     pres_coll = db["prescriptions"]
     prof_coll = db["profiles"]
 
-    # 1) find all prescriptions owned by me that have a non-empty shared_with array
+    # Find all my prescriptions that have at least one share
     cursor = pres_coll.find({
         "user_id": user_id,
         "shared_with": {"$exists": True, "$ne": []}
     })
 
     out: List[SentPrescriptionOut] = []
-    async for pres in cursor:  # if your driver supports async; otherwise use a sync loop
-        # 2) build recipient list
-        recips = []
+    # Use a regular (synchronous) for-loop over the cursor
+    for pres in cursor:
+        recips: List[Recipient] = []
         for uid in pres.get("shared_with", []):
             profile = prof_coll.find_one({"user_id": uid}) or {}
             recips.append(Recipient(
                 user_id=uid,
-                name=profile.get("name", "")
+                name=profile.get("name")
             ))
 
         out.append(SentPrescriptionOut(
